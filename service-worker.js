@@ -1,4 +1,4 @@
-const CACHE_NAME = "present-v1";
+const CACHE_NAME = "present-v2";
 
 const APP_FILES = [
     "./",
@@ -26,15 +26,14 @@ self.addEventListener(
             caches
                 .open(CACHE_NAME)
                 .then(cache =>
-                    cache.addAll(
-                        APP_FILES
-                    )
+                    cache.addAll(APP_FILES)
                 )
                 .then(() =>
                     self.skipWaiting()
                 )
 
         );
+
     }
 );
 
@@ -54,6 +53,7 @@ self.addEventListener(
                 .then(keys =>
 
                     Promise.all(
+
                         keys
                             .filter(
                                 key =>
@@ -66,6 +66,7 @@ self.addEventListener(
                                         key
                                     )
                             )
+
                     )
 
                 )
@@ -74,6 +75,7 @@ self.addEventListener(
                 )
 
         );
+
     }
 );
 
@@ -86,99 +88,67 @@ self.addEventListener(
     "fetch",
     event => {
 
-        /*
-         * Only handle GET requests.
-         */
-
         if (
             event.request.method !==
             "GET"
         ) {
-
             return;
         }
 
 
         event.respondWith(
 
-            caches
-                .match(
-                    event.request
-                )
-                .then(cachedResponse => {
+            fetch(event.request)
+
+                .then(response => {
 
                     /*
-                     * If the file is already
-                     * cached, use it.
+                     * Get the newest version
+                     * from GitHub whenever
+                     * internet is available.
                      */
 
                     if (
-                        cachedResponse
+                        response &&
+                        response.status === 200 &&
+                        response.type === "basic"
                     ) {
 
-                        return cachedResponse;
+                        const copy =
+                            response.clone();
+
+                        caches
+                            .open(CACHE_NAME)
+                            .then(cache => {
+
+                                cache.put(
+                                    event.request,
+                                    copy
+                                );
+
+                            });
+
                     }
 
 
+                    return response;
+
+                })
+
+                .catch(() => {
+
                     /*
-                     * Otherwise fetch it
-                     * from the network.
+                     * Offline:
+                     * use the cached version.
                      */
 
-                    return fetch(
+                    return caches.match(
                         event.request
-                    )
-                    .then(response => {
-
-                        /*
-                         * Save a copy for
-                         * future offline use.
-                         */
-
-                        if (
-                            response &&
-                            response.status ===
-                                200 &&
-                            response.type ===
-                                "basic"
-                        ) {
-
-                            const copy =
-                                response.clone();
-
-                            caches
-                                .open(
-                                    CACHE_NAME
-                                )
-                                .then(cache => {
-
-                                    cache.put(
-                                        event.request,
-                                        copy
-                                    );
-
-                                });
-                        }
-
-
-                        return response;
-
-                    })
-                    .catch(() => {
-
-                        /*
-                         * If there is no internet,
-                         * return the cached app.
-                         */
-
-                        return caches.match(
-                            "./index.html"
-                        );
-
-                    });
+                    );
 
                 })
 
         );
+
     }
 );
