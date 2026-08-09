@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    >
+
+    <meta
+        name="theme-color"
+        content="#0f172a"
+    >
+
+    <meta
+        name="apple-mobile-web-app-capable"
+        content="yes"
+    >
+
+    <meta
+        name="apple-mobile-web-app-status-bar-style"
+        content="default"
+    >
+
+    <meta
+        name="apple-mobile-web-app-title"
+        content="Present"
+    >
+
+    <title>
+        Present — Attendance Tracker
+    </title>
+
+
+    <link
+        rel="stylesheet"
+        href="styles.css"
+    >
+
+    <link
+        rel="manifest"
+        href="manifest.json"
+    >
+
+</head>
+
+
+<body>
+
+
+    <!--
+        The entire application is
+        rendered inside this element
+        by app.js.
+    -->
+
+    <main id="app">
+
+        <div class="shell">
+
+            <div class="card empty">
+
+                <div class="empty-icon">
+                    ✓
+                </div>
+
+                <h2>
+                    Loading Present...
+                </h2>
+
+                <p class="muted">
+                    Starting your attendance tracker.
+                </p>
+
+            </div>
+
+        </div>
+
+    </main>
+
+
+    <!--
+        Database
+    -->
+
+    <script src="db.js"></script>
+
+
+    <!--
+        Attendance calculations
+    -->
+
+    <script src="calculations.js"></script>
+
+
+    <!--
+        Main application
+    -->
+
+    <script src="app.js"></script>
+
+
+    <!--
+        PWA Service Worker
+    -->
+
+    <script>
+
+        if ("serviceWorker" in navigator) {
+
+            window.addEventListener(
+                "load",
+                () => {
+
+                    navigator.serviceWorker
+                        .register(
+                            "service-worker.js"
+                        )
+                        .catch(
+                            error => {
+
+                                console.log(
+                                    "Service worker:",
+                                    error
+                                );
+
+                            }
+                        );
+
+                }
+            );
+
+        }
+
+    </script>
+
+
+</body>
+
+</html>
