@@ -1511,11 +1511,9 @@ function showSettings() {
                 ← Back
             </button>
 
-
             <h1>
                 Settings
             </h1>
-
 
             <div class="card">
 
@@ -1524,21 +1522,34 @@ function showSettings() {
                 </h3>
 
                 <p class="muted">
-                    Your attendance is stored
-                    locally on this device.
+                    Your attendance is stored locally
+                    on this device.
                 </p>
-
 
                 <button
                     class="secondary"
-                    style="width:100%"
+                    style="width:100%; margin-bottom:10px"
                     id="exportBtn"
                 >
                     Export Backup
                 </button>
 
-            </div>
+                <button
+                    class="secondary"
+                    style="width:100%"
+                    id="importBtn"
+                >
+                    Import Backup
+                </button>
 
+                <input
+                    type="file"
+                    id="importFile"
+                    accept=".json,application/json"
+                    style="display:none"
+                >
+
+            </div>
 
             <div class="card">
 
@@ -1571,9 +1582,27 @@ function showSettings() {
 
 
     document
+        .getElementById("importBtn")
+        .onclick = () => {
+
+            document
+                .getElementById("importFile")
+                .click();
+
+        };
+
+
+    document
+        .getElementById("importFile")
+        .onchange = importBackup;
+
+
+    document
         .getElementById("deleteAllBtn")
         .onclick = deleteAllData;
 }
+
+
 
 
 /* =========================
@@ -1638,6 +1667,128 @@ async function exportBackup() {
     URL.revokeObjectURL(url);
 }
 
+/* =========================
+   IMPORT BACKUP
+========================= */
+
+async function importBackup(event) {
+
+    const file = event.target.files[0];
+
+    if (!file) return;
+
+
+    try {
+
+        const text = await file.text();
+
+        const data = JSON.parse(text);
+
+
+        // Validate backup
+        if (
+            !data ||
+            data.version !== 1 ||
+            !Array.isArray(data.semesters) ||
+            !Array.isArray(data.subjects) ||
+            !Array.isArray(data.attendance)
+        ) {
+
+            alert("Invalid Present backup file.");
+
+            return;
+        }
+
+
+        const confirmed = confirm(
+            "Import this backup?\n\n" +
+            "This will replace all current attendance data."
+        );
+
+
+        if (!confirmed) {
+
+            event.target.value = "";
+
+            return;
+        }
+
+
+        // Clear existing data
+        await DB.clearAll();
+
+
+        // Restore semesters
+        for (const semester of data.semesters) {
+
+            await DB.put(
+                "semesters",
+                semester
+            );
+
+        }
+
+
+        // Restore subjects
+        for (const subject of data.subjects) {
+
+            await DB.put(
+                "subjects",
+                subject
+            );
+
+        }
+
+
+        // Restore attendance
+        for (const record of data.attendance) {
+
+            await DB.put(
+                "attendance",
+                record
+            );
+
+        }
+
+
+        // Reload data into memory
+        await loadData();
+
+
+        currentSemesterId =
+            semesters.length
+                ? semesters[0].id
+                : null;
+
+
+        currentSubjectId = null;
+
+
+        alert(
+            "Backup imported successfully!"
+        );
+
+
+        showHome();
+
+    } catch (error) {
+
+        console.error(
+            "Import backup error:",
+            error
+        );
+
+        alert(
+            "Could not import backup. " +
+            "Make sure you selected a valid Present backup file."
+        );
+
+    }
+
+
+    // Allow selecting the same file again
+    event.target.value = "";
+}
 
 /* =========================
    DELETE SUBJECT
